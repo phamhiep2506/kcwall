@@ -1,0 +1,56 @@
+#!/usr/bin/env python
+
+import requests
+import os
+import random
+import urllib.request
+import pathlib
+import time
+
+folder = ".wallpapers"
+tags = ["", "order:wide", "rating:safe"]
+url = "https://konachan.net/post.json?limit=100&tags=" + " ".join(tags)
+
+download_dir = os.path.join(pathlib.Path.home(), folder)
+
+
+def create_dir():
+    if not os.path.exists(download_dir):
+        os.mkdir(download_dir)
+
+
+def set_wallpaper(path_file):
+    os.system(
+        "gsettings set org.gnome.desktop.background picture-uri-dark " + path_file
+    )
+
+
+def download_image(file_url):
+    path_file = os.path.join(download_dir, "konachan.png")
+
+    req = requests.get(url, stream=True)
+    if req.status_code == 200:
+        opener = urllib.request.build_opener()
+        opener.addheaders = [("User-agent", "Mozilla/5.0")]
+        urllib.request.install_opener(opener)
+        urllib.request.urlretrieve(file_url, path_file)
+
+        set_wallpaper(path_file)
+
+
+def getRandomImage(url):
+    req = requests.get(url)
+
+    if req.status_code == 200:
+        posts = req.json()
+        post = random.choice(posts)
+
+        download_image(post["file_url"])
+
+
+if __name__ == "__main__":
+    create_dir()
+
+    while True:
+        getRandomImage(url)
+        time.sleep(300)
