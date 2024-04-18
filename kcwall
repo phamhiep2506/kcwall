@@ -3,15 +3,13 @@
 import requests
 import os
 import random
-import urllib.request
-import pathlib
-import time
+from tqdm import tqdm
 
 folder = ".wallpapers"
 tags = ["", "order:wide", "rating:safe"]
 url = "https://konachan.net/post.json?limit=100&tags=" + " ".join(tags)
 
-download_dir = os.path.join(pathlib.Path.home(), folder)
+download_dir = os.path.join(os.path.expanduser("~"), folder)
 
 
 def create_dir():
@@ -26,14 +24,27 @@ def set_wallpaper(path_file):
 
 
 def download_image(file_url):
-    path_file = os.path.join(download_dir, "konachan.png")
+    print(f"URL: {file_url}")
 
-    req = requests.get(url, stream=True)
+    file_name = file_url.split("/")[-1]
+    path_file = os.path.join(download_dir, file_name)
+
+    if os.path.exists(path_file):
+        set_wallpaper(path_file)
+        return
+
+    req = requests.get(file_url, stream=True)
     if req.status_code == 200:
-        opener = urllib.request.build_opener()
-        opener.addheaders = [("User-agent", "Mozilla/5.0")]
-        urllib.request.install_opener(opener)
-        urllib.request.urlretrieve(file_url, path_file)
+        total_size = int(req.headers.get("content-length", 0))
+        with open(path_file, "wb") as file, tqdm(
+            total=total_size,
+            unit="iB",
+            unit_scale=True,
+            unit_divisor=1024,
+        ) as bar:
+            for data in req.iter_content(chunk_size=1024):
+                size = file.write(data)
+                bar.update(size)
 
         set_wallpaper(path_file)
 
@@ -44,13 +55,11 @@ def getRandomImage(url):
     if req.status_code == 200:
         posts = req.json()
         post = random.choice(posts)
+        file_url = post["file_url"]
 
-        download_image(post["file_url"])
+        download_image(file_url)
 
 
 if __name__ == "__main__":
     create_dir()
-
-    while True:
-        getRandomImage(url)
-        time.sleep(300)
+    getRandomImage(url)
