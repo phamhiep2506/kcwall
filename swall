@@ -2,12 +2,10 @@
 
 import requests
 import os
-import random
 from tqdm import tqdm
+import sys
 
 folder = ".wallpapers"
-tags = ["", "order:wide", "rating:safe"]
-url = "https://konachan.net/post.json?limit=100&tags=" + " ".join(tags)
 
 download_dir = os.path.join(os.path.expanduser("~"), folder)
 
@@ -49,17 +47,6 @@ def download_image(file_url):
         set_wallpaper(path_file)
 
 
-def getRandomImage(url):
-    req = requests.get(url)
-
-    if req.status_code == 200:
-        posts = req.json()
-        post = random.choice(posts)
-        file_url = post["file_url"]
-
-        download_image(file_url)
-
-
 if __name__ == "__main__":
     create_dir()
-    getRandomImage(url)
+    download_image(sys.argv[1])
